@@ -8,7 +8,7 @@ import { fn, col } from 'sequelize';
 
 
 const healthCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
-
+const summaryCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 
 //Validation using express-validator middleware
 export const registerDeviceValidation = [
@@ -170,6 +170,14 @@ export const deviceSummary = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
+    const cacheKey = `device-summary-${page}-${limit}`;
+
+    const cached = summaryCache.get(cacheKey);
+
+    if (cached) {
+        return res.json({ cached: true, ...cached });
+    }
+
     try {
         const { count, rows } = await Device.findAndCountAll({
             attributes: [
@@ -183,12 +191,16 @@ export const deviceSummary = async (req: Request, res: Response) => {
             raw: true
         });
 
-        res.json({
+        const response = {
             page,
             limit,
             total: count.length || 0,
             data: rows
-        });
+        };
+
+        summaryCache.set(cacheKey, response);
+
+        res.json({ cached: false, ...response });
     } catch (error) {
         console.error("Error fetching device summary:", error);
         res.status(500).json({ error: "Failed to fetch device summary" });
