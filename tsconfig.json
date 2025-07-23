@@ -3,8 +3,10 @@
     "target": "ES6",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./", // rootDir set to both src and tests
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "types": ["jest"]
+  },
+  "include": ["src", "tests"]
 }
