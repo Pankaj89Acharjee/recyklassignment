@@ -1,0 +1,82 @@
+openapi: 3.0.0
+info:
+  title: ABC Device Manager API
+  version: 1.0.0
+paths:
+  /devices/register:
+    post:
+      summary: Register a new device
+      responses:
+        '201':
+          description: Device registered
+  /devices/{id}/health:
+    get:
+      summary: Get device health
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Device health returned
+  /devices/{id}/decommission:
+    put:
+      summary: Decommission a device
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Device decommissioned
+  /devices/{id}/telemetry:
+    post:
+      summary: Submit telemetry data for a device
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                temperature:
+                  type: number
+                cpu:
+                  type: number
+                status:
+                  type: string
+      responses:
+        '201':
+          description: Telemetry saved
+  /devices/{id}/health:
+    get:
+      summary: Get current and historical device health
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Current and historical health returned
+        '404':
+          description: No data found
+
+  /devices/summary:
+    get:
+      summary: Get device summary
+      responses:
+        '200':
+          description: Summary returned
+  
