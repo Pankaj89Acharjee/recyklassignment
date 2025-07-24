@@ -12,12 +12,12 @@ const summaryCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 
 //Validation using express-validator middleware
 export const registerDeviceValidation = [
-    body('id').notEmpty().withMessage('Device Id is required'),
     body('type').notEmpty().withMessage('Device type required'),
     body('location').notEmpty().withMessage('Location is required'),
-    body('cpu').optional().isNumeric().withMessage('CPU must be a number'),
-    body('temperature').optional().isNumeric().withMessage('Temperature must be a number'),
-    body('status').optional().isIn(['healthy', 'unhealthy']).withMessage('Status must be healthy or unhealthy'),
+    body('status').notEmpty().withMessage('Status is required'),
+    body('manufacturer').notEmpty().withMessage('Manufacturer is required'),
+    body('macAddress').notEmpty().withMessage('MAC Address is required'),
+    body('firmwareVersion').notEmpty().withMessage('Firmware Version is required'),
     validate
 ]
 
@@ -38,11 +38,18 @@ export const decommissionDeviceValidation = [
 
 // Registering a new device
 export const registerNewDevice = async (req: Request, res: Response) => {
-    const { id, type, location } = req.body;
-    if (!id || !type || !location) return res.status(400).json({ error: "Missing fields" });
+    const { type, location, status, manufacturer, macAddress, firmwareVersion } = req.body;
+    if (!type || !location || !status || !manufacturer || !macAddress || !firmwareVersion) return res.status(400).json({ error: "Missing fields" });
 
-    const addNewDevice = await Device.create({ id, type, location })
-    res.status(201).json({ message: `New ${type} Device registered`, addNewDevice });
+    try {
+        const addNewDevice = await Device.create({ type, location, status, manufacturer, macAddress, firmwareVersion });
+        if (!addNewDevice) return res.status(500).json({ status: false, error: "Failed to register device" });
+        res.status(201).json({ status: true, message: `New ${type} Device registered`, addNewDevice });
+    } catch (error) {
+        console.error("Error registering device:", error);
+        return res.status(500).json({ status: false, error: "Failed to register device" });
+
+    }
 };
 
 
@@ -52,8 +59,12 @@ export const registerNewDevice = async (req: Request, res: Response) => {
 export const getAllDevices = async (req: Request, res: Response) => {
     try {
         const devices = await Device.findAll();
+        if (!devices || devices.length === 0) {
+            return res.status(404).json({ error: "No devices found" });
+        }
         res.status(200).json({ devices });
     } catch (error) {
+        console.error("Error fetching devices:", error);
         res.status(500).json({ error: "Failed to fetch devices" });
     }
 }
@@ -101,7 +112,7 @@ export const getDeviceHealth = async (req: Request, res: Response) => {
         return res.json({ cached: false, ...response });
     } catch (err) {
         console.error("Error fetching health logs:", err);
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: err });
     }
 }
 

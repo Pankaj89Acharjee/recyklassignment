@@ -8,9 +8,20 @@ export const Device = sequelize.define("Device", {
         autoIncrement: true,
     },
     type: DataTypes.STRING,
-    location: DataTypes.STRING,
+    location: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+
+    manufacturer: DataTypes.STRING,
+    macAddress: {
+        type: DataTypes.STRING,
+        unique: true,
+    },
+    firmwareVersion: DataTypes.STRING,
     status: {
-        type: DataTypes.ENUM("active", "inactive", "decommissioned"),
+        type: DataTypes.ENUM("active", "inactive", "decommissioned", "deployed", "manufacturing"),
         defaultValue: "active",
     },
     registeredAt: {
@@ -19,7 +30,7 @@ export const Device = sequelize.define("Device", {
     },
 },
     {
-        freezeTableName: true, 
+        freezeTableName: true,
     }
 )
 

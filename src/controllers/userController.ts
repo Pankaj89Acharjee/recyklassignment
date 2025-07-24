@@ -34,16 +34,30 @@ export const registerNewUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(401).json({ error: "Invalid email" });
 
-    const valid = await bcrypt.compare(password, user.getDataValue("password"));
-    if (!valid) return res.status(401).json({ error: "Invalid password" });
+    try {
+        const user = await User.findOne({ where: { email } });
+        if (!user) return res.status(401).json({ success: false, message: "Invalid email" });
 
-    const token = jwt.sign(
-        { userId: user.getDataValue("id"), role: user.getDataValue("role") },
-        process.env.JWT_SECRET || "secret",
-        { expiresIn: "1h" }
-    );
-    res.json({ token });
+        const valid = await bcrypt.compare(password, user.getDataValue("password"));
+        if (!valid) return res.status(401).json({ success: false, message: "Invalid password" });
+
+        const token = jwt.sign(
+            { userId: user.getDataValue("id"), role: user.getDataValue("role") },
+            process.env.JWT_SECRET || "secret",
+            { expiresIn: "1h" }
+        );
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 1000 // 1 hr
+        })
+        res.json({ email, role: user.getDataValue("role"), token, success: true });
+    } catch (error) {
+        console.error("Error during login:", error);
+        return res.status(500).json({ success: false, message: error || "Internal server error" });
+    }
+
 }
